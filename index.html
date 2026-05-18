@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Textile Product Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 flex justify-between items-center h-16">
+            <span class="font-bold text-xl text-indigo-600">Fabric Catalog</span>
+            <div class="flex space-x-4">
+                <button id="viewCatalogBtn" onclick="switchTab('catalog')" class="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 font-medium">View Catalog</button>
+                <button id="viewUploadBtn" onclick="switchTab('upload')" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium">Add Product</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        
+        <section id="catalogTab" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Active Inventory</h1>
+                    <p class="text-slate-500 text-sm">Click a Sort Number to view details and share.</p>
+                </div>
+            </div>
+
+            <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <p class="text-slate-400 animate-pulse col-span-full text-center py-12">Loading inventory from Google Sheets...</p>
+            </div>
+        </section>
+
+        <section id="uploadTab" class="hidden max-w-xl mx-auto bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 class="text-xl font-bold mb-4">Add New Fabric Specification</h2>
+            <form id="productForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Sort No.</label>
+                        <input type="text" id="formSortNo" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Weight</label>
+                        <input type="text" id="formWeight" placeholder="e.g., 4.5 oz" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Width</label>
+                        <input type="text" id="formWidth" placeholder="e.g., 66\" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Shade</label>
+                        <input type="text" id="formShade" placeholder="e.g., Indigo" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Weave</label>
+                        <input type="text" id="formWeave" placeholder="e.g., 2/1 Twill" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Weft Shrinkage</label>
+                        <input type="text" id="formShrinkage" placeholder="e.g., 0-3%" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Blend</label>
+                    <input type="text" id="formBlend" placeholder="e.g., 100% Cotton" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Direct Image URL</label>
+                    <input type="url" id="formImageUrl" placeholder="Paste image link here" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-indigo-600">
+                    <p class="text-slate-400 text-xs mt-1">Tip: Use imgbb.com or postimages.org to quickly upload your photo and copy the 'Direct Link'.</p>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-medium py-2.5 rounded-lg hover:bg-indigo-700 transition">Save to Google Sheets</button>
+            </form>
+        </section>
+    </div>
+
+    <div id="detailsModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div class="md:flex">
+                <div class="md:w-1/2 bg-slate-100">
+                    <img id="modalImage" src="" alt="Fabric Photo" class="w-full h-64 md:h-full object-cover">
+                </div>
+                <div class="p-6 md:w-1/2 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full uppercase tracking-wider" id="modalShade">Shade</span>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900">Sort No: <span id="modalSortNo" class="text-indigo-600"></span></h3>
+                        
+                        <div class="mt-4 space-y-2 border-t border-b border-slate-100 py-4 text-sm text-slate-600">
+                            <div class="flex justify-between"><strong>Weight:</strong> <span id="modalWeight"></span></div>
+                            <div class="flex justify-between"><strong>Width:</strong> <span id="modalWidth"></span></div>
+                            <div class="flex justify-between"><strong>Weave:</strong> <span id="modalWeave"></span></div>
+                            <div class="flex justify-between"><strong>Weft Shrinkage:</strong> <span id="modalShrinkage"></span></div>
+                            <div class="flex justify-between"><strong>Blend:</strong> <span id="modalBlend"></span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 space-y-2">
+                        <button id="shareButton" onclick="shareData()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-medium hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                            📋 Copy Specs & Photo to Share
+                        </button>
+                        <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-2 rounded-xl font-medium hover:bg-slate-200 transition">Back to List</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PASTE YOUR SHEETY API URL HERE
+        const SHEETY_API_URL = "https://api.sheety.co/YOUR_PROJECT_ID/YOUR_SHEET_NAME/products"; 
+        
+        let localInventory = [];
+        let currentSelectedFabric = null;
+
+        // Fetch products immediately on load
+        async function fetchInventory() {
+            try {
+                const response = await fetch(SHEETY_API_URL);
+                const data = await response.json();
+                // Assumes your sheet tab name maps to data.products
+                localInventory = data.products || data.sheet1 || []; 
+                renderCatalog(localInventory);
+            } catch (error) {
+                console.error("Failed to load inventory:", error);
+                document.getElementById('productsGrid').innerHTML = `<p class="text-red-500 col-span-full text-center">Error connecting to Google Sheets. Verify your API URL.</p>`;
+            }
+        }
+
+        function renderCatalog(items) {
+            const grid = document.getElementById('productsGrid');
+            if(items.length === 0) {
+                grid.innerHTML = `<p class="text-slate-400 col-span-full text-center py-12">No products found in your sheet yet.</p>`;
+                return;
+            }
+            grid.innerHTML = items.map(item => `
+                <div onclick="openModal(${item.id})" class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition flex flex-col justify-between">
+                    <img src="${item.image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400'}" alt="Fabric" class="w-full h-44 object-cover bg-slate-100">
+                    <div class="p-4">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">${item.blend}</div>
+                        <h3 class="text-lg font-bold text-slate-900 mt-0.5">Sort: <span class="text-indigo-600">${item.sortNo || item.sortno}</span></h3>
+                        <div class="mt-2 grid grid-cols-2 text-xs text-slate-500 gap-y-1">
+                            <div><strong>Weight:</strong> ${item.weight}</div>
+                            <div><strong>Width:</strong> ${item.width}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(id) {
+            const item = localInventory.find(i => i.id === id);
+            if (!item) return;
+            currentSelectedFabric = item;
+
+            document.getElementById('modalSortNo').innerText = item.sortNo || item.sortno;
+            document.getElementById('modalWeight').innerText = item.weight;
+            document.getElementById('modalWidth').innerText = item.width;
+            document.getElementById('modalShade').innerText = item.shade;
+            document.getElementById('modalWeave').innerText = item.weave;
+            document.getElementById('modalShrinkage').innerText = item.weftShrinkage || item.weftshrinkage;
+            document.getElementById('modalBlend').innerText = item.blend;
+            document.getElementById('modalImage').src = item.image;
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+            document.getElementById('shareButton').innerText = "📋 Copy Specs & Photo to Share";
+        }
+
+        // The One-Click Share Logic
+        function shareData() {
+            if (!currentSelectedFabric) return;
+            const item = currentSelectedFabric;
+            
+            // Format text beautifully for messaging apps
+            const shareText = `*Fabric Specifications*\n-------------------------\n• *Sort No:* ${item.sortNo || item.sortno}\n• *Blend:* ${item.blend}\n• *Weight:* ${item.weight}\n• *Width:* ${item.width}\n• *Shade:* ${item.shade}\n• *Weave:* ${item.weave}\n• *Weft Shrinkage:* ${item.weftShrinkage || item.weftshrinkage}\n\n*View Image:* ${item.image}`;
+
+            navigator.clipboard.writeText(shareText).then(() => {
+                const btn = document.getElementById('shareButton');
+                btn.innerText = "✓ Copied to Clipboard!";
+                setTimeout(() => { btn.innerText = "📋 Copy Specs & Photo to Share"; }, 2500);
+            }).catch(err => {
+                alert("Could not copy link automatically. Please manually copy the screen.");
+            });
+        }
+
+        // Add item back to Google Sheets
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const newRow = {
+                product: { // Sheety expects the root key to be the singular name of your tab
+                    sortNo: document.getElementById('formSortNo').value,
+                    weight: document.getElementById('formWeight').value,
+                    width: document.getElementById('formWidth').value,
+                    shade: document.getElementById('formShade').value,
+                    weave: document.getElementById('formWeave').value,
+                    weftShrinkage: document.getElementById('formShrinkage').value,
+                    blend: document.getElementById('formBlend').value,
+                    image: document.getElementById('formImageUrl').value
+                }
+            };
+
+            try {
+                const response = await fetch(SHEETY_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newRow)
+                });
+                if (response.ok) {
+                    alert("Fabric saved successfully to Google Sheets!");
+                    document.getElementById('productForm').reset();
+                    switchTab('catalog');
+                    fetchInventory(); // Reload the feed
+                }
+            } catch (error) {
+                alert("Error saving data. Make sure POST is enabled in your Sheety settings.");
+            }
+        }
+
+        // Simple view toggling
+        function switchTab(tab) {
+            const catalogTab = document.getElementById('catalogTab');
+            const uploadTab = document.getElementById('uploadTab');
+            const cBtn = document.getElementById('viewCatalogBtn');
+            const uBtn = document.getElementById('viewUploadBtn');
+
+            if (tab === 'catalog') {
+                catalogTab.classList.remove('hidden');
+                uploadTab.classList.add('hidden');
+                cBtn.className = "px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 font-medium";
+                uBtn.className = "px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium";
+            } else {
+                catalogTab.classList.add('hidden');
+                uploadTab.classList.remove('hidden');
+                uBtn.className = "px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 font-medium";
+                cBtn.className = "px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium";
+            }
+        }
+
+        // Initial launch
+        fetchInventory();
+    </script>
+</body>
+</html>
