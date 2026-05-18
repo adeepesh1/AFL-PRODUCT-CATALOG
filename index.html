@@ -116,7 +116,7 @@
 
     <script>
         // PASTE YOUR SHEETY API URL HERE
-        const SHEETY_API_URL = "https://api.sheety.co/7588dd2905475a8481a738174de07dba/aflProductCatalog/sheet1"; 
+        const SHEETY_API_URL = "https://api.sheety.co/YOUR_PROJECT_ID/YOUR_SHEET_NAME/products"; 
         
         let localInventory = [];
         let currentSelectedFabric = null;
@@ -126,7 +126,7 @@
             try {
                 const response = await fetch(SHEETY_API_URL);
                 const data = await response.json();
-                // Assumes your sheet tab name maps to data.products
+                // Assumes your sheet tab name maps to data.products or data.sheet1
                 localInventory = data.products || data.sheet1 || []; 
                 renderCatalog(localInventory);
             } catch (error) {
@@ -178,12 +178,11 @@
             document.getElementById('shareButton').innerText = "📋 Copy Specs & Photo to Share";
         }
 
-        // The One-Click Share Logic
+        // Beautifully formats plain text for messaging layout setups
         function shareData() {
             if (!currentSelectedFabric) return;
             const item = currentSelectedFabric;
             
-            // Format text beautifully for messaging apps
             const shareText = `*Fabric Specifications*\n-------------------------\n• *Sort No:* ${item.sortNo || item.sortno}\n• *Blend:* ${item.blend}\n• *Weight:* ${item.weight}\n• *Width:* ${item.width}\n• *Shade:* ${item.shade}\n• *Weave:* ${item.weave}\n• *Weft Shrinkage:* ${item.weftShrinkage || item.weftshrinkage}\n\n*View Image:* ${item.image}`;
 
             navigator.clipboard.writeText(shareText).then(() => {
@@ -195,13 +194,26 @@
             });
         }
 
-        // Add item back to Google Sheets
+        // Form Submission logic incorporating Duplicate Entry Checks
         async function handleFormSubmit(e) {
             e.preventDefault();
             
+            const inputSortNo = document.getElementById('formSortNo').value.trim();
+
+            // Check if input Sort No already exists in the local inventory array
+            const isDuplicate = localInventory.some(item => {
+                const existingSortNo = (item.sortNo || item.sortno || "").toString().trim();
+                return existingSortNo.toLowerCase() === inputSortNo.toLowerCase();
+            });
+
+            if (isDuplicate) {
+                alert(`❌ Error: Sort No. "${inputSortNo}" already exists in your inventory! Please use a unique number.`);
+                return; 
+            }
+
             const newRow = {
-                sheet1: { // Sheety expects the root key to be the singular name of your tab
-                    sortNo: document.getElementById('formSortNo').value,
+                sheet1: { 
+                    sortNo: inputSortNo,
                     weight: document.getElementById('formWeight').value,
                     width: document.getElementById('formWidth').value,
                     shade: document.getElementById('formShade').value,
@@ -222,14 +234,13 @@
                     alert("Fabric saved successfully to Google Sheets!");
                     document.getElementById('productForm').reset();
                     switchTab('catalog');
-                    fetchInventory(); // Reload the feed
+                    fetchInventory(); 
                 }
             } catch (error) {
                 alert("Error saving data. Make sure POST is enabled in your Sheety settings.");
             }
         }
 
-        // Simple view toggling
         function switchTab(tab) {
             const catalogTab = document.getElementById('catalogTab');
             const uploadTab = document.getElementById('uploadTab');
